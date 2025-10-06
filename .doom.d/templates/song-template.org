@@ -1,0 +1,18 @@
+* Metadata
+:PROPERTIES:
+:BAND:
+:ALBUM:
+:STATUS: In Progress
+:THEME:
+:END:
+
+#+filetags: :song:in-progress:
+
+* Lyrics
+#+BEGIN_VERSE
+%?
+#+END_VERSE
+
+* Notes
+- Started: %U
+- [[id:]]  ; link to band or album if desired

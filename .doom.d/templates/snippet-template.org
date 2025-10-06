@@ -1,0 +1,13 @@
+* Metadata
+:PROPERTIES:
+:BAND:
+:STATUS: Snippet
+:THEME:
+:END:
+
+#+filetags: :song:snippet:
+
+* Idea
+%?
+
+* Notes
