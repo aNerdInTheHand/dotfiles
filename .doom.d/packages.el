@@ -51,3 +51,5 @@
 (package! org-superstar)
 (package! olivetti)
 (package! org-roam-ui)
+(package! consult-org-roam)
+(package! org-sql)

@@ -42,6 +42,14 @@
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
 
+;; Keep line breaks when exporting songs so it doesn't auto-paragraph
+(setq org-export-preserve-breaks t
+      org-export-with-fixed-width t)
+
+
+
+;; LaTeX defaults to pdfLaTeX which doesn't support modern system fonts
+(setq org-latex-compiler "xelatex")
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
@@ -95,6 +103,11 @@
       :desc "Capture to node" "n r c" #'org-roam-capture
       :desc "Dailies"         "n r d" #'org-roam-dailies-goto-today)
 
+(map! :leader
+      (:prefix ("n" . "notes/roam")
+       :desc "New song" "s" (lambda () (interactive) (org-roam-capture :keys "s"))
+       :desc "New snippet" "n" (lambda () (interactive) (org-roam-capture :keys "n"))))
+
 (after! org-roam
   (setq org-roam-capture-templates
         '(("d" "default" plain
@@ -103,11 +116,26 @@
                               "#+title: ${title}\n#+date: %U\n\n")
            :unnarrowed t)
 
+          ;; --- SONG TEMPLATE ---
           ("s" "Song" plain
-           "* Song Info\n:PROPERTIES:\n:STATUS: In Progress\n:BAND: \n:ALBUM: \n:LYRICS: \n:END:\n\n* Lyrics\n\n** Verse 1\n\n%?\n\n** Chorus\n\n"
+           (file "~/.doom.d/templates/song-template.org")
            :target (file+head "songs/${slug}.org"
-                              "#+title: ${title}\n#+filetags: :song:\n#+date: %U\n")
+                              "#+title: ${title}\n#+filetags: :song:in-progress:\n#+date: %U\n")
            :unnarrowed t)
+
+          ;; --- SNIPPET / IDEA TEMPLATE ---
+          ("n" "Snippet / Idea" plain
+           (file "~/.doom.d/templates/snippet-template.org")
+           :target (file+head "songs/${slug}.org"
+                              "#+title: ${title}\n#+filetags: :song:snippet:\n#+date: %U\n")
+           :unnarrowed t)
+
+          ;; --- LYRIC SECTION ---
+          ("l" "Lyric section" plain
+              "* %^{Section|Verse|Chorus} %^N\n#+BEGIN_EXAMPLE\n%?\n#+END_EXAMPLE"
+              :target (file+head "songs/${slug}.org"
+                                "#+title: ${title}\n#+LATEX_CLASS: songbook\n#+OPTIONS: toc:nil num:nil\n")
+              :unnarrowed t)
 
           ("a" "Album" plain
            "* Album Info\n:PROPERTIES:\n:NAME: \n:BAND: \n:RELEASED: \n:END:\n\n** About\n\n%?\n\n** Track Listing\n\n"
@@ -153,6 +181,21 @@
         org-roam-ui-follow t
         org-roam-ui-update-on-save t))
 
+(use-package! org-sql
+  :after org
+  :config
+  (setq org-sql-connection-alist
+        '((main :dbtype "sqlite3" :dbfile "~/org/roam/org-sql.db"))))
+
+
+(use-package! consult-org-roam
+  :after org-roam
+  :hook (org-roam-mode . consult-org-roam-mode)
+  :config
+  (setq consult-org-roam-grep-func #'consult-ripgrep)
+  (consult-org-roam-mode 1))
+
+
 (setq org-todo-keywords
       '((sequence "TODO(t)" "In Progress(i)" "Needs Lyrics(l)" "Needs Chords(c)"
                   "|" "DONE(d)" "RECORDED(r)" "PUBLISHED(p)")))
@@ -166,14 +209,52 @@
 
 (setq org-agenda-files '("~/org/roam/songs"))
 
+; (after! ox-latex
+;   (add-to-list 'org-latex-classes
+;                '("moderncv"
+;                  "\\documentclass[11pt,a4paper,sans]{moderncv}
+; \\moderncvstyle{classic}
+; \\moderncvcolor{blue}"
+;                  ("\\section{%s}" . "\\section*{%s}")
+;                  ("\\subsection{%s}" . "\\subsection*{%s}")
+;                  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+
 (after! ox-latex
   (add-to-list 'org-latex-classes
-               '("moderncv"
-                 "\\documentclass[11pt,a4paper,sans]{moderncv}
-\\moderncvstyle{classic}
-\\moderncvcolor{blue}"
+               '("songbook"
+                 "\\documentclass[12pt]{article}
+\\usepackage{geometry}
+\\geometry{margin=1in}
+\\usepackage{fontspec}
+\\setmainfont{DejaVu Sans Mono}
+\\renewcommand{\\familydefault}{\\ttdefault}"
                  ("\\section{%s}" . "\\section*{%s}")
-                 ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+                 ("\\subsection{%s}" . "\\subsection*{%s}"))))
+
 
 (setq doom-modeline-enable-word-count t)
+
+; (setq my/org-song-font '(:family "Iosevka" :height 130))
+
+; (defun my/org-song-fixed-width ()
+;   "Use fixed-width text in song files only."
+;   (when (and buffer-file-name
+;              (string-match-p "/org/roam/songs/" buffer-file-name))
+;     (variable-pitch-mode -1)
+;     (setq-local my/org-song-font '(:family "DejaVu Sans Mono" :height 120))
+;     (buffer-face-mode 1)))
+
+(defun my/org-song-fixed-width ()
+  "Use fixed-width text in song files only."
+  (when (and buffer-file-name
+             (string-match-p "/org/roam/songs/" buffer-file-name))
+    (variable-pitch-mode -1)
+    (setq-local buffer-face-mode-face '(:family "Iosevka" :height 130))
+    (setq-local org-latex-default-class "songbook")
+    (buffer-face-mode 1)))
+
+(add-hook 'org-mode-hook #'my/org-song-fixed-width)
+
+(setq-local org-latex-default-class "songbook")
+(setq-local org-export-with-toc nil)
+(setq-local org-export-with-section-numbers nil)
