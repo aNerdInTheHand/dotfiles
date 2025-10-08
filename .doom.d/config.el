@@ -228,32 +228,59 @@
 \\usepackage{fontspec}
 \\setmainfont{DejaVu Sans Mono}
 \\renewcommand{\\familydefault}{\\ttdefault}
-\\setcounter{secnumdepth}{0}"
+\\setcounter{secnumdepth}{0}
+\\usepackage{fancyvrb}"
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}"))))
 
-(defun my/org-song-visuals ()
-  "Visual tweaks for song files."
+; (defun my/org-song-visuals ()
+;   "Visual tweaks for song files."
+;   (when (and buffer-file-name
+;              (string-match-p "/org/roam/songs/" buffer-file-name))
+;     (setq-local buffer-face-mode-face '(:family "Iosevka Term" :height 140))
+;     (buffer-face-mode 1)
+;     (setq-local line-spacing 0.25)
+;     (hl-line-mode -1)
+;     (variable-pitch-mode -1)
+;     (display-line-numbers-mode -1)))
+
+; (add-hook 'org-mode-hook #'my/org-song-visuals)
+
+(defun my/org-song-buffer-style ()
+  "Set monospace lyric font as the baseline for song buffers."
   (when (and buffer-file-name
              (string-match-p "/org/roam/songs/" buffer-file-name))
-    (setq-local buffer-face-mode-face '(:family "Iosevka Term" :height 140))
-    (buffer-face-mode 1)
-    (setq-local line-spacing 0.25)
-    (hl-line-mode -1)
+    ;; Force monospaced font
     (variable-pitch-mode -1)
-    (display-line-numbers-mode -1)))
+    ;; Make the lyric font the baseline
+    (setq-local buffer-face-mode-face
+                '(:family "Iosevka Term" :height 140 :foreground "#CCCCCC"))
+    (buffer-face-mode 1)
+    ;; Slightly loosen spacing for readability
+    (setq-local line-spacing 0.25)
+    ;; Clean up distractions
+    (display-line-numbers-mode -1)
+    (hl-line-mode -1)))
 
-(add-hook 'org-mode-hook #'my/org-song-visuals)
+(add-hook 'org-mode-hook #'my/org-song-buffer-style)
+
+
+(defface song-lyric-face
+  '((t (:foreground "#CCCCCC" :height 1.1)))
+  "Face for lyric lines.")
 
 (defface song-chord-face
   '((t (:foreground "#FFD700" :weight bold)))
   "Face for chords in song lyrics.")
 
 (defun my/song-chord-highlighting ()
-  "Highlight chords (e.g., Am, F#, Gsus) in Org buffers."
-  (font-lock-add-keywords
-   nil
-   '(("\\b[A-G][#b]?m?[0-9]*\\b" . 'song-chord-face))))
+  "Highlight all chords in Org song files."
+  (when (and buffer-file-name
+             (string-match-p "/org/roam/songs/" buffer-file-name))
+    (font-lock-add-keywords
+     nil
+     '(("\\b\\([A-G][#b]?\\(?:m\\|min\\|maj\\|dim\\|aug\\|sus\\|add\\|m7\\|7\\|9\\|11\\|13\\|\\+\\|-\\)?[0-9]*\\(?:/[A-G][#b]?\\)?\\)\\b"
+        . 'song-chord-face)))))
 
 (add-hook 'org-mode-hook #'my/song-chord-highlighting)
 
@@ -266,6 +293,13 @@
   (insert "#+BEGIN_VERSE\n\n#+END_VERSE")
   (forward-line -1)
   (end-of-line))
+
+(after! ox-latex
+  ;; Preserve whitespace when Org exports verse blocks
+  (defun my/org-latex-verse-block (verse-block contents info)
+    "Export verse blocks as verbatim to preserve spacing."
+    (format "\\begin{Verbatim}[fontsize=\\small,formatcom=\\ttfamily]\n%s\\end{Verbatim}" contents))
+  (advice-add 'org-latex-verse-block :override #'my/org-latex-verse-block))
 
 (map! :after org :map org-mode-map :localleader "v" #'my/insert-verse-block)
 
