@@ -1,4 +1,4 @@
-* Metadata
+* Metadata :noexport:
 :PROPERTIES:
 :BAND:
 :ALBUM:
@@ -15,4 +15,4 @@
 
 * Notes
 - Started: %U
-- [[id:]]  ; link to band or album if desired
+;; - [[id:]]  ; link to band or album if desired

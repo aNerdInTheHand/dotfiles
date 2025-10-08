@@ -106,6 +106,7 @@
 (map! :leader
       (:prefix ("n" . "notes/roam")
        :desc "New song" "s" (lambda () (interactive) (org-roam-capture :keys "s"))
+       :desc "New snippet" "l" (lambda () (interactive) (org-roam-capture :keys "l"))
        :desc "New snippet" "n" (lambda () (interactive) (org-roam-capture :keys "n"))))
 
 (after! org-roam
@@ -120,7 +121,7 @@
           ("s" "Song" plain
            (file "~/.doom.d/templates/song-template.org")
            :target (file+head "songs/${slug}.org"
-                              "#+title: ${title}\n#+filetags: :song:in-progress:\n#+date: %U\n")
+                              "#+title: ${title}\n#+filetags: :song:in-progress:\n#+date: %U\n#+OPTIONS: toc:nil num:nil title:t date:nil\n")
            :unnarrowed t)
 
           ;; --- SNIPPET / IDEA TEMPLATE ---
@@ -132,7 +133,7 @@
 
           ;; --- LYRIC SECTION ---
           ("l" "Lyric section" plain
-              "* %^{Section|Verse|Chorus} %^N\n#+BEGIN_EXAMPLE\n%?\n#+END_EXAMPLE"
+              "* %^{Section|Verse|Chorus} %^N\n#+BEGIN_VERSE\n%?\n#+END_VERSE"
               :target (file+head "songs/${slug}.org"
                                 "#+title: ${title}\n#+LATEX_CLASS: songbook\n#+OPTIONS: toc:nil num:nil\n")
               :unnarrowed t)
@@ -223,38 +224,50 @@
   (add-to-list 'org-latex-classes
                '("songbook"
                  "\\documentclass[12pt]{article}
-\\usepackage{geometry}
-\\geometry{margin=1in}
+\\usepackage[a4paper,margin=1in,top=0.6in]{geometry}
 \\usepackage{fontspec}
 \\setmainfont{DejaVu Sans Mono}
-\\renewcommand{\\familydefault}{\\ttdefault}"
+\\renewcommand{\\familydefault}{\\ttdefault}
+\\setcounter{secnumdepth}{0}"
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}"))))
 
+(defun my/org-song-visuals ()
+  "Visual tweaks for song files."
+  (when (and buffer-file-name
+             (string-match-p "/org/roam/songs/" buffer-file-name))
+    (setq-local buffer-face-mode-face '(:family "Iosevka Term" :height 140))
+    (buffer-face-mode 1)
+    (setq-local line-spacing 0.25)
+    (hl-line-mode -1)
+    (variable-pitch-mode -1)
+    (display-line-numbers-mode -1)))
+
+(add-hook 'org-mode-hook #'my/org-song-visuals)
+
+(defface song-chord-face
+  '((t (:foreground "#FFD700" :weight bold)))
+  "Face for chords in song lyrics.")
+
+(defun my/song-chord-highlighting ()
+  "Highlight chords (e.g., Am, F#, Gsus) in Org buffers."
+  (font-lock-add-keywords
+   nil
+   '(("\\b[A-G][#b]?m?[0-9]*\\b" . 'song-chord-face))))
+
+(add-hook 'org-mode-hook #'my/song-chord-highlighting)
 
 (setq doom-modeline-enable-word-count t)
 
-; (setq my/org-song-font '(:family "Iosevka" :height 130))
+;;; Custom function to insert a verse block
+(defun my/insert-verse-block ()
+  "Insert an org-mode #+BEGIN_VERSE ... #+END_VERSE block at point."
+  (interactive)
+  (insert "#+BEGIN_VERSE\n\n#+END_VERSE")
+  (forward-line -1)
+  (end-of-line))
 
-; (defun my/org-song-fixed-width ()
-;   "Use fixed-width text in song files only."
-;   (when (and buffer-file-name
-;              (string-match-p "/org/roam/songs/" buffer-file-name))
-;     (variable-pitch-mode -1)
-;     (setq-local my/org-song-font '(:family "DejaVu Sans Mono" :height 120))
-;     (buffer-face-mode 1)))
+(map! :after org :map org-mode-map :localleader "v" #'my/insert-verse-block)
 
-(defun my/org-song-fixed-width ()
-  "Use fixed-width text in song files only."
-  (when (and buffer-file-name
-             (string-match-p "/org/roam/songs/" buffer-file-name))
-    (variable-pitch-mode -1)
-    (setq-local buffer-face-mode-face '(:family "Iosevka" :height 130))
-    (setq-local org-latex-default-class "songbook")
-    (buffer-face-mode 1)))
-
-(add-hook 'org-mode-hook #'my/org-song-fixed-width)
-
-(setq-local org-latex-default-class "songbook")
-(setq-local org-export-with-toc nil)
-(setq-local org-export-with-section-numbers nil)
+;; Per-directory settings for songs are now handled in
+;; ~/org/roam/songs/.dir-locals.el
