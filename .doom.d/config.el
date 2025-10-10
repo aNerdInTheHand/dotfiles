@@ -119,7 +119,7 @@
           ("s" "Song" plain
            (file "~/.doom.d/templates/song-template.org")
            :target (file+head "songs/${slug}.org"
-                              "#+title: ${title}\n#+filetags: :song:in-progress:\n#+date: %U\n#+OPTIONS: toc:nil num:nil title:t date:nil\n")
+                              "#+title: ${title}\n#+author Nick Holvast\n#+filetags: :song:in-progress:\n#+date: %U\n#+OPTIONS: toc:nil num:nil title:t date:nil\n")
            :unnarrowed t)
 
           ;; --- SNIPPET / IDEA TEMPLATE ---
