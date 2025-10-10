@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Fancy line break
+# key: br
+# expand-env: ((yas-indent-line 'fixed))
+# --
+;; ~~~ ;;
+$0

@@ -46,8 +46,6 @@
 (setq org-export-preserve-breaks t
       org-export-with-fixed-width t)
 
-
-
 ;; LaTeX defaults to pdfLaTeX which doesn't support modern system fonts
 (setq org-latex-compiler "xelatex")
 
@@ -264,7 +262,6 @@
 
 (add-hook 'org-mode-hook #'my/org-song-buffer-style)
 
-
 (defface song-lyric-face
   '((t (:foreground "#CCCCCC" :height 1.1)))
   "Face for lyric lines.")
@@ -302,6 +299,29 @@
   (advice-add 'org-latex-verse-block :override #'my/org-latex-verse-block))
 
 (map! :after org :map org-mode-map :localleader "v" #'my/insert-verse-block)
+
+(defun my/song-tab-detect-and-toggle-overwrite ()
+  "Enable overwrite mode when inside a guitar tablature block."
+  (when (and (derived-mode-p 'org-mode)
+             (save-excursion
+               (beginning-of-line)
+               (or (looking-at "^[EADGBe]|")
+                   (org-between-regexps-p "^[[:space:]]*#\\+BEGIN_\\(EXAMPLE\\|TAB\\)"
+                                           "^[[:space:]]*#\\+END_\\(EXAMPLE\\|TAB\\)"))))
+    (unless overwrite-mode (overwrite-mode 1)))
+  (when (and overwrite-mode
+             (not (save-excursion
+                    (beginning-of-line)
+                    (or (looking-at "^[EADGBe]|")
+                        (org-between-regexps-p "^[[:space:]]*#\\+BEGIN_\\(EXAMPLE\\|TAB\\)"
+                                               "^[[:space:]]*#\\+END_\\(EXAMPLE\\|TAB\\)")))))
+    (overwrite-mode -1)))
+
+(add-hook 'post-command-hook #'my/song-tab-detect-and-toggle-overwrite)
+
+;;; enable overwrite mode in guitar tab snippet
+(setq yas-triggers-in-field t)
+(setq yas-wrap-around-region t)
 
 ;; Per-directory settings for songs are now handled in
 ;; ~/org/roam/songs/.dir-locals.el

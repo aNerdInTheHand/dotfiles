@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: Songwriting verse block
+# key: vs
+# condition: t
+# expand-env: ((yas-indent-line 'fixed))
+# --
+#+BEGIN_VERSE
+$0
+#+END_VERSE
