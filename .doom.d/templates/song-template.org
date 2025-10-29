@@ -15,4 +15,3 @@
 
 * Notes
 - Started: %U
-;; - [[id:]]  ; link to band or album if desired
